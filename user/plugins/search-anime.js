@@ -48,7 +48,7 @@ ${details.synopsis || '-'}`
 handler.pluginName = 'anime search'
 handler.command = ['anime']
 handler.category = ['search']
-handler.description = 'gatau males mw beli truck
+handler.description = 'gatau males mw beli truck'
 handler.meta = {
     fileName: 'search-anime.js',
     version: '1.0.0',

@@ -1,7 +1,7 @@
 import { downloadMediaMessage } from 'baileys'
 import crypto from 'crypto'
-import { user manager } from '#helper'
-/** @param {import('../../system/type/plugin.js').HandlerParams} */
+import { userManager } from '#helper'
+/** @param {import('../type/plugin.js').HandlerParams} */
 async function handler({ sock, jid, m, q }) {
 if (!userManager.trustedJids.has(m.senderId))
 return

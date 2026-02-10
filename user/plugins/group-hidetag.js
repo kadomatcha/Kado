@@ -1,4 +1,4 @@
-import { sendText, tag } from '#helper'
+import { sendText, userManager } from '#helper'
 import { isJidGroup } from 'baileys'
 
 async function handler({ m, jid, text, sock }) {
@@ -12,38 +12,37 @@ async function handler({ m, jid, text, sock }) {
     }
 
     const metadata = await sock.groupMetadata(jid)
-    const senderId = m.senderId // FIX LID
+    const senderId = m.senderId
 
-    // ===== ADMIN CHECK (FIX TOTAL) =====
-    const isAdmin = metadata.participants.some(p => {
-        if (p.id === senderId && p.admin) return true
-        if (metadata.owner === senderId) return true
-        return false
-    })
+    // ===== ADMIN CHECK =====
+    const isAdmin = metadata.participants.some(p =>
+        (p.id === senderId && p.admin) || metadata.owner === senderId
+)
 
-    if (!isAdmin) {
-        return sendText(sock, jid, 'khusus admin grup', m)
+const isTrusted = userManager.trustedJids.has(m.senderId)
+    
+
+     
+    if (!isAdmin && !isTrusted) {
+        return sendText(sock, jid, 'khusus admin atau trusted user', m)
     }
 
     // ===== HIDETAG =====
     const members = metadata.participants.map(v => v.id)
 
-    return await sock.sendMessage(
-        jid,
-        {
-            text,
-            mentions: members
-        }
-    )
+    await sock.sendMessage(jid, {
+        text,
+        mentions: members
+    })
 }
 
 handler.pluginName = 'hidetag'
 handler.command = ['h', 'hidetag']
 handler.category = ['group']
-handler.deskripsi = 'mention semua member tanpa terlihat (admin only)'
+handler.deskripsi = 'mention semua member tanpa terlihat (admin & trusted)'
 handler.meta = {
     fileName: 'group-hidetag.js',
-    version: '1.1',
+    version: '1.2',
     author: 'Kado'
 }
 

@@ -9,23 +9,30 @@ async function handler({ sock, m, q, text, jid }) {
 
     const rt = `\`\`\`MEMORY DETAIL\`\`\``
 
-    const codex = Object.entries(process.memoryUsage()).map(v => {
-        return {
-            optionName: v[0] + " MB",
-            optionVoteCount: (v[1] / (1024 * 1024)).toFixed(2)
-        }
-    })
+    const codex = Object.entries(process.memoryUsage()).map(v => ({
+        optionName: v[0] + " MB",
+        optionVoteCount: Number((v[1] / (1024 * 1024)).toFixed(2))
+    }))
 
-    await sock.relayMessage(
-        jid,
-        {
-            pollResultSnapshotMessage: {
-                name: rt,
-                pollVotes: codex
-            }
-        },
-        {}
-    )
+    const content = {
+        pollResultSnapshotMessage: {
+            name: rt,
+            pollVotes: codex,
+            contextInfo: {
+                forwardingScore: 127,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: "173817930489991@lid",
+                    serverMessageId: 0,
+                    newsletterName: botInfo.sdn
+                },
+                forwardOrigin: 0
+            },
+            pollType: 0
+        }
+    }
+
+    await sock.relayMessage(jid, content, {})
 }
 
 handler.pluginName = 'memory usage'

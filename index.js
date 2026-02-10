@@ -13,12 +13,12 @@ import makeWASocket, {
 import P from 'pino'
 import NodeCache from '@cacheable/node-cache';
 import qrTerminal from 'qrcode-terminal'
-
+import { saveMessage } from '#cache'
 // node js import
 import readline from 'node:readline'
 import fs from 'node:fs'
 import path from 'node:path'
-
+import axios from 'axios'
 // local import
 import * as wawa from '#helper'
 import { allPath, msToReadableTime, sendText, safeRunAsync } from './system/helper.js'
@@ -337,24 +337,150 @@ const startSock = async function (opts = {}) {
                 current.size = current.participants.length
             }
 
-            switch (action) {
-                case 'add':
-                    await add(selectedParticipants)
-                    break
-                case 'promote':
-                    await promoteDemote(selectedParticipants, 'admin')
-                    break
-                case 'demote':
-                    await promoteDemote(selectedParticipants, null)
-                    break
-                case 'remove':
-                    await remove(selectedParticipants, groupMetadata, jid)
-                    break
-                case 'modify':
-                    console.log('modify', bem)
-                    break
+switch (action) {
+
+    case 'add':
+    await add(selectedParticipants)
+
+    for (const user of selectedParticipants) {
+        try {
+            const avatar = await sock.profilePictureUrl(user.id, 'image').catch(() => null)
+            const bg = await sock.profilePictureUrl(jid, 'image').catch(() => avatar)
+            const metadata = await getGroupMetadata(jid)
+
+            const memberCount = metadata.participants.length
+            const pushName = wawa.tag(m.senderId)
+
+            await sock.sendMessage(jid, {
+                text: `👋 halo ${pushName} selamat datang di ${metadata.subject}\nkamu adalah member ke: *${memberCount}*`,
+                mentions: [user.id],
+                contextInfo: {
+                    mentionedJid: [user.id],
+                    externalAdReply: {
+                        title: metadata.subject,
+                        body: `yeyy nambah member jadi: ${memberCount}`,
+                        thumbnailUrl: bg || avatar,
+                        sourceUrl: avatar,
+                        mediaType: 1,
+                        renderLargerThumbnail: true,
+                        showAdAttribution: false
+                    }
+                }
+            })
+
+        } catch (e) {
+            console.log('welcome error', e)
+        }
+    }
+    break
+
+    case 'remove':
+    await remove(selectedParticipants, groupMetadata, jid)
+
+    const metadata = await getGroupMetadata(jid)
+    const sisaMember = metadata.participants.length
+
+    for (const user of selectedParticipants) {
+        try {
+            const avatar = await sock.profilePictureUrl(user.id, 'image').catch(() => null)
+            const bg = await sock.profilePictureUrl(jid, 'image').catch(() => avatar)
+
+            const pushName = wawa.tag(m.senderId)
+
+            await sock.sendMessage(jid, {
+                text: `👋 sayonara ${pushName}\nmember: ${sisaMember}`,
+                mentions: [user.id],
+                contextInfo: {
+                    mentionedJid: [user.id],
+                    externalAdReply: {
+                        title: metadata.subject,
+                        body: `sisa member: ${sisaMember}`,
+                        thumbnailUrl: bg || avatar,
+                        sourceUrl: avatar,
+                        mediaType: 1,
+                        renderLargerThumbnail: true,
+                        showAdAttribution: false
+                    }
+                }
+            })
+
+        } catch (e) {
+            console.log('goodbye error', e)
+        }
+    }
+    break
+
+    case 'promote':
+        await promoteDemote(selectedParticipants, 'admin')
+
+        for (const user of selectedParticipants) {
+            try {
+                const avatar = await sock.profilePictureUrl(user.id, 'image').catch(() => null)
+                const bg = await sock.profilePictureUrl(jid, 'image').catch(() => avatar)
+                const metadata = await getGroupMetadata(jid)
+
+                await sock.sendMessage(jid, {
+                    text: `*Selamat @${user.id.split('@')[0]} kamu telah menjadi bangsawan!*`,
+                    mentions: [user.id],
+                    contextInfo: {
+                        mentionedJid: [user.id],
+                        externalAdReply: {
+                            title: metadata.subject,
+                            body: "jaga grup baik baik ya new admin",
+                            thumbnailUrl: bg || avatar,
+                            sourceUrl: avatar,
+                            mediaType: 1,
+                            renderLargerThumbnail: true,
+                            showAdAttribution: false
+                        }
+                    }
+                })
+
+            } catch (e) {
+                console.log('promote error', e)
             }
         }
+        break
+
+
+    case 'demote':
+        await promoteDemote(selectedParticipants, null)
+
+        for (const user of selectedParticipants) {
+            try {
+                const avatar = await sock.profilePictureUrl(user.id, 'image').catch(() => null)
+                const bg = await sock.profilePictureUrl(jid, 'image').catch(() => avatar)
+                const metadata = await getGroupMetadata(jid)
+
+                await sock.sendMessage(jid, {
+                    text: `⚠️ @${user.id.split('@')[0]} pengkhianat nih`,
+                    mentions: [user.id],
+                    contextInfo: {
+                        mentionedJid: [user.id],
+                        externalAdReply: {
+                            title: metadata.subject,
+                            body: "pengkhianat grup! enyahlah!",
+                            thumbnailUrl: bg || avatar,
+                            sourceUrl: avatar,
+                            mediaType: 1,
+                            renderLargerThumbnail: true,
+                            showAdAttribution: false
+                        }
+                    }
+                })
+
+            } catch (e) {
+                console.log('demote error', e)
+            }
+        }
+        break
+
+
+    case 'modify':
+        console.log('modify', bem)
+        break
+}
+   }
 
         // [groupMetadata] [chat]
         if (ev['chats.update']) {
@@ -376,9 +502,14 @@ const startSock = async function (opts = {}) {
             }
         }
 
-        if (ev['messages.upsert']) {
-            await messageUpsertHandler(sock, ev['messages.upsert'])
-        }
+       if (ev['messages.upsert']) {
+
+    for (const msg of ev['messages.upsert'].messages) {
+        saveMessage(msg)
+    }
+
+    await messageUpsertHandler(sock, ev['messages.upsert'])
+}
 
 
         if (ev['presence.update']) {

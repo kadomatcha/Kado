@@ -37,6 +37,8 @@
   "type": "module",
   "imports": {
     "#helper": "./system/helper.js",
-    "#kyhlpr": "./user/helper/kyhlpr.js"
+    "#kyhlpr": "./user/helper/kyhlpr.js",
+    "#simple": "./user/helper/baileys-generic.js",
+    "#cache": "./user/helper/message-store.js"
   }
 }

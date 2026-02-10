@@ -4,6 +4,37 @@ import {
     downloadMediaMessage, getContentType } from 'baileys'
 import crypto from 'crypto'
 import axios from 'axios'
+import { spawn } from 'child_process'
+
+export async function toMp3({ m, q }) {
+    const target = q ? q : m   // kalau reply pakai q, kalau tidak pakai m
+    const buffer = await downloadMediaMessage(target, 'buffer')
+
+    return new Promise((resolve, reject) => {
+        const ffmpeg = spawn('ffmpeg', [
+            '-i', 'pipe:0',
+            '-vn',
+            '-acodec', 'libmp3lame',
+            '-f', 'mp3',
+            'pipe:1'
+        ])
+
+        let data = []
+        let error = []
+
+        ffmpeg.stdout.on('data', chunk => data.push(chunk))
+        ffmpeg.stderr.on('data', chunk => error.push(chunk))
+
+        ffmpeg.on('close', code => {
+            if (code !== 0) reject(Buffer.concat(error).toString())
+            else resolve(Buffer.concat(data))
+        })
+
+        ffmpeg.stdin.write(buffer)
+        ffmpeg.stdin.end()
+    })
+}
+
 /**
  * @param {Object} sock
  * @param {string} chatId - jid / m.chatId

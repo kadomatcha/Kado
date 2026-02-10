@@ -9,13 +9,13 @@ async function handler({ sock, m, q, text, jid, command, prefix }) {
     if (q) return
     if (text) return
     
-    await sock.sendMessage(jid, { text: 'pong' }, { quoted: m })
+    await sock.sendMessage(jid, { text: 'ahh kadoonkunn...~' }, { quoted: m })
 }
 
 handler.pluginName = 'ping'
 handler.description = 'buat cek bot respond apa kagak.. simply just type ping'
 handler.command = ['ping']
-handler.category = ['tool']
+handler.category = ['tools']
 
 handler.config = {
     systemPlugin: true,

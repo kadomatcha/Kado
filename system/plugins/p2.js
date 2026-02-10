@@ -20,7 +20,7 @@ async function handler({ sock, m, q, text, jid, command, prefix }) {
 handler.pluginName = 'ping 2'
 handler.description = 'sama kaya ping.. tapi ada durasi delay sendMessage'
 handler.command = ['p2']
-handler.category = ['tool']
+handler.category = ['tools']
 
 handler.config = {
     systemPlugin: true,

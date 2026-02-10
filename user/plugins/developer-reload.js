@@ -16,23 +16,26 @@ function shouldIgnore(filePath) {
     return ignoreList.some(i => filePath.startsWith(i) || filePath.includes(i))
 }
 
+// helper delay
+const delay = ms => new Promise(r => setTimeout(r, ms))
+
 async function handler({ sock, m, jid }) {
     if (!userManager.trustedJids.has(m.senderId)) return
 
     const sent = await sock.sendMessage(jid, { text: '🔄 checking update...' }, { quoted: m })
 
-    await new Promise(r => setTimeout(r, 1000))
+    await delay(1500) // tunggu 1,5 detik sebelum update berikutnya
 
     try {
-        // mulai load plugin
+        // load plugins
         await editText(sock, jid, sent, '📂 load plugins...')
+        await delay(1500) // 1,5 detik supaya terlihat proses
 
-        // jalankan loadPlugins & buildMenu
         await pluginManager.loadPlugins()
         pluginManager.buildMenu()
 
-        
         await editText(sock, jid, sent, '📂 load plugins selesai!')
+        await delay(2000) // delay lagi sebelum lanjut cek git
 
         // cek git
         const { stdout } = await run('git status --porcelain')
@@ -59,6 +62,8 @@ async function handler({ sock, m, jid }) {
 
         // push ke repo
         await editText(sock, jid, sent, '⬆️ pushing changes to repo...')
+        await delay(1500) // delay sebelum git command
+
         await run('git add .')
         await run(`git commit -m "auto update ${Date.now()}"`)
         await run('git push')

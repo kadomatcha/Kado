@@ -4,7 +4,41 @@ import {
     downloadMediaMessage, getContentType } from 'baileys'
 import crypto from 'crypto'
 import axios from 'axios'
+import { botInfo } from '#helper'
 import { spawn } from 'child_process'
+
+export function makeFakeBiz() {
+  const fakeBiz = {
+    key: {
+      remoteJid: 'status@broadcast',
+      fromMe: false,
+      participant: '0@s.whatsapp.net'
+    },
+    message: {
+      extendedTextMessage: {
+        text: botInfo.sdn,
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          businessMessageForwardInfo: {
+            businessOwnerJid: '0@s.whatsapp.net'
+          },
+          externalAdReply: {
+            title: botInfo.sdn,
+            body: 'Verified Account',
+            thumbnailUrl: 'https://cdn.nekohime.site/file/dRtKtEVD.jpg',
+            sourceUrl: 'https://business.whatsapp.com/',
+            mediaType: 1,
+            renderLargerThumbnail: false,
+            showAdAttribution: true
+          }
+        }
+      }
+    }
+  }
+
+  return fakeBiz
+}
 
 export async function toMp3({ m, q }) {
     const target = q ? q : m   // kalau reply pakai q, kalau tidak pakai m
@@ -228,7 +262,7 @@ export async function sendText(sock, jid, text, replyTo) {
     jid,
     { text },
     {
-      quoted: replyTo,
+      quoted: replyTo || makeFakeBiz(),
       messageId: genAppleId()
     }
   )

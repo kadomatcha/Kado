@@ -13,7 +13,7 @@ async function handler({ sock, m, q, text, jid, command, prefix }) {
 
 handler.pluginName = 'random blue archive'
 handler.description = 'get random blue archive image. thanks to https://www.ikyiizyy.my.id'
-handler.command = ['rba']
+handler.command = ['baa']
 handler.category = ['random']
 
 handler.meta = {

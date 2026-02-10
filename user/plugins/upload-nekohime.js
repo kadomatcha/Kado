@@ -1,7 +1,7 @@
 import axios from 'axios'
 import FormData from 'form-data'
 import { delay } from 'baileys'
-import { sendText, getBuff, react } from '#helper'
+import { sendText, getBuff, react, botInfo } from '#helper'
 
 /**
  * Upload ke Nekohime
@@ -53,9 +53,9 @@ async function handler({ m, q, jid, sock }) {
           body: {
             text:
               `✅ *Yey berhasil!*\n\n` +
-              `📄 File: ${m.pushName}+${ext}\n`
+              `📄 File: ${m.pushName}.${ext}\n`
           },
-          footer: { text: 'Veronica Ira' },
+          footer: { text: botInfo.sdn },
           nativeFlowMessage: {
             buttons: [
               {

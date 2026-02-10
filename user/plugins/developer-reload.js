@@ -1,10 +1,9 @@
 import { exec } from 'child_process'
 import util from 'util'
-import { pluginManager, userManager, botInfo } from '#helper'
+import { pluginManager, userManager, botInfo, editText } from '#helper'
 
 const run = util.promisify(exec)
 
-// folder/file yang tidak mau ditampilkan atau di-commit
 const ignoreList = [
     'auth/',
     'node_modules/',
@@ -20,20 +19,20 @@ function shouldIgnore(filePath) {
 async function handler({ sock, m, jid }) {
     if (!userManager.trustedJids.has(m.senderId)) return
 
+    const sent = await sock.sendMessage(jid, { text: 'checking update...' }, { quoted: m })
+
+    await new Promise(r => setTimeout(r, 1500))
+
     try {
-        // reload plugin
         await pluginManager.loadPlugins()
         pluginManager.buildMenu()
 
         const { stdout } = await run('git status --porcelain')
 
         if (!stdout.trim()) {
-            return await sock.sendMessage(jid, {
-                text: 'plugin reload selesai\nrepo: tidak ada perubahan'
-            }, { quoted: m })
+            return await editText(sock, jid, sent, 'plugin reload selesai\nrepo: tidak ada perubahan')
         }
 
-        // parsing + filter
         const changedLines = stdout
             .trim()
             .split('\n')
@@ -45,16 +44,13 @@ async function handler({ sock, m, jid }) {
             .filter(f => !shouldIgnore(f.filePath))
 
         if (!changedLines.length) {
-            return await sock.sendMessage(jid, {
-                text: 'plugin reload selesai\nperubahan hanya pada file yang di-ignore'
-            }, { quoted: m })
+            return await editText(sock, jid, sent, 'plugin reload selesai\nperubahan hanya pada file yang di-ignore')
         }
 
         const files = changedLines
             .map(f => `• [${f.status}] ${f.filePath}`)
             .join('\n')
 
-        // commit hanya file yang tidak di-ignore
         await run('git add .')
         await run(`git commit -m "auto update ${Date.now()}"`)
         await run('git push')
@@ -67,12 +63,10 @@ ${files}
 
 repo: berhasil di push`
 
-        await sock.sendMessage(jid, { text: msg }, { quoted: m })
+        await editText(sock, jid, sent, msg)
 
     } catch (e) {
-        await sock.sendMessage(jid, {
-            text: 'error:\n' + e.message
-        }, { quoted: m })
+        await editText(sock, jid, sent, 'error:\n' + e.message)
     }
 }
 
@@ -82,7 +76,7 @@ handler.command = ['r']
 handler.category = ['developer']
 handler.meta = {
     fileName: 'developer-reload.js',
-    version: '1.2',
+    version: '1.3',
     author: botInfo.an
 }
 

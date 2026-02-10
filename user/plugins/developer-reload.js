@@ -34,13 +34,13 @@ async function handler({ sock, m, jid }) {
         }
 
         const changedLines = stdout
-            .trim()
-            .split('\n')
-            .map(line => {
-                const status = line.slice(0, 2).trim()
-                const filePath = line.slice(3).trim()
-                return { status, filePath }
-            })
+    .trim()
+    .split('\n')
+    .map(line => {
+        const status = line.slice(0, 2).trim()
+        const filePath = line.replace(/^[ MADRCU?]{1,2}\s+/, '').trim()
+        return { status, filePath }
+    })
             .filter(f => !shouldIgnore(f.filePath))
 
         if (!changedLines.length) {

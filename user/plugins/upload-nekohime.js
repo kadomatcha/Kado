@@ -53,8 +53,7 @@ async function handler({ m, q, jid, sock }) {
           body: {
             text:
               `✅ *Yey berhasil!*\n\n` +
-              `📄 File: ${ext}\n` +
-              `🔗 ${url}`
+              `📄 File: ${m.pushName}+${ext}\n`
           },
           footer: { text: 'Veronica Ira' },
           nativeFlowMessage: {
@@ -111,7 +110,7 @@ async function handler({ m, q, jid, sock }) {
 
 handler.pluginName = 'nekohime upload'
 handler.description = 'Upload image/video/sticker ke Nekohime'
-handler.command = ['nekohime','tourl']
+handler.command = ['nekohime']
 handler.category = ['uploader']
 
 handler.meta = {

@@ -39,7 +39,7 @@ async function progressBar(sock, jid, sent) {
 🔎 scanning system
 [${filled}${empty}] ${percent}%`)
 
-        await delay(1500)
+        await delay(900)
     }
 
     await editText(sock, jid, sent,
@@ -109,7 +109,6 @@ repo: tidak ada perubahan`)
 
         await editText(sock, jid, sent,
 `📂 load plugins... ✅
-🔎 scanning system... selesai ✅
 
 ✅ plugin reload selesai
 

@@ -26,8 +26,25 @@ function mapStatus(raw) {
     return raw || 'Unknown'
 }
 
-function randomDelay() {
-    return 1000 + Math.floor(Math.random() * 1000)
+async function progressBar(sock, jid, sent) {
+    const steps = 10
+    for (let i = 1; i <= steps; i++) {
+        const filled = '█'.repeat(i)
+        const empty = '░'.repeat(steps - i)
+        const percent = i * 10
+
+        await editText(sock, jid, sent,
+`📂 load plugins... ✅
+
+🔎 scanning system
+[${filled}${empty}] ${percent}%`)
+
+        await delay(1500)
+    }
+
+    await editText(sock, jid, sent,
+`📂 load plugins... ✅
+🔎 scanning system... selesai ✅`)
 }
 
 async function handler({ sock, m, jid }) {
@@ -35,50 +52,26 @@ async function handler({ sock, m, jid }) {
 
     const sent = await sock.sendMessage(jid, { text: '🔄 checking update...' }, { quoted: m })
 
+    await delay(1500)
+
     try {
         await editText(sock, jid, sent, '📂 load plugins...')
-        await delay(1200)
+        await delay(1500)
 
         await pluginManager.loadPlugins()
         pluginManager.buildMenu()
 
-        await editText(sock, jid, sent, '📂 load plugins selesai!\n\n🔍 scanning menu...')
-        await delay(1500)
-
-        const scanLogs = []
-
-        for (const cat of pluginManager.categoryArray) {
-            await editText(sock, jid, sent,
-`📂 load plugins selesai!
-
-🔍 scanning menu...
-• menu ${cat} scan...`)
-
-            await delay(randomDelay())
-
-            scanLogs.push(`• menu ${cat} → update?: tidak`)
-        }
-
-        await editText(sock, jid, sent,
-`📂 load plugins selesai!
-
-🔍 scan result:
-${scanLogs.join('\n')}
-
-📡 checking git...`)
-
-        await delay(1500)
+        await progressBar(sock, jid, sent)
 
         const { stdout } = await run('git status --porcelain')
 
         if (!stdout.trim()) {
             return await editText(sock, jid, sent,
-`📂 load plugins selesai!
+`📂 load plugins... ✅
+🔎 scanning system... selesai ✅
 
-🔍 scan result:
-${scanLogs.join('\n')}
-
-✅ repo bersih, tidak ada perubahan`)
+✅ plugin reload selesai
+repo: tidak ada perubahan`)
         }
 
         const changedLines = stdout
@@ -93,12 +86,10 @@ ${scanLogs.join('\n')}
 
         if (!changedLines.length) {
             return await editText(sock, jid, sent,
-`📂 load plugins selesai!
+`📂 load plugins... ✅
+🔎 scanning system... selesai ✅
 
-🔍 scan result:
-${scanLogs.join('\n')}
-
-repo: perubahan hanya pada file ignore`)
+✅ plugin reload selesai`)
         }
 
         const files = changedLines
@@ -106,13 +97,10 @@ repo: perubahan hanya pada file ignore`)
             .join('\n')
 
         await editText(sock, jid, sent,
-`📂 load plugins selesai!
-
-🔍 scan result:
-${scanLogs.join('\n')}
+`📂 load plugins... ✅
+🔎 scanning system... selesai ✅
 
 ⬆️ pushing changes to repo...`)
-
         await delay(1500)
 
         await run('git add .')
@@ -120,12 +108,15 @@ ${scanLogs.join('\n')}
         await run('git push')
 
         await editText(sock, jid, sent,
-`✅ plugin reload selesai
+`📂 load plugins... ✅
+🔎 scanning system... selesai ✅
 
-📦 perubahan terdeteksi:
+✅ plugin reload selesai
+
+perubahan terdeteksi:
 ${files}
 
-🚀 repo berhasil di push`)
+repo: berhasil di push`)
     } catch (e) {
         await editText(sock, jid, sent, '❌ error:\n' + e.message)
     }
@@ -137,7 +128,7 @@ handler.command = ['r']
 handler.category = ['developer']
 handler.meta = {
     fileName: 'developer-reload.js',
-    version: '1.5',
+    version: '1.7',
     author: botInfo.an
 }
 

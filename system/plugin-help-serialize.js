@@ -1,19 +1,81 @@
 import { botInfo as b, dirPovCwd } from './helper.js'
 
+/**
+ * serialize plugin info jadi tampilan “menu bot premium” dengan komentar penjelasan
+ * @param {Object} handler - object handler plugin
+ */
 export function pluginHelpSerialize(handler) {
-    const emptyPlaceholder = '(tidak ada)'
+    // placeholder default
+    const emptyPlaceholder = 'tidak ada'
     const notFound = '-'
-    const header = `*📖 dokumentasi plugin*\n\n`
-    const name = `${b.b3f}name${b.b3b}\n${handler.pluginName}\n\n`
-    const category = `${b.b3f}category${b.b3b}\n${handler.category.join(', ') || emptyPlaceholder}\n\n`
-    const command = `${b.b3f}command${b.b3b}\n${handler.command.join(', ')}\n\n`
 
-    const needPrefix = `${b.b3f}bypass prefix${b.b3b}\n${handler?.config?.bypassPrefix ? 'yes' : 'no'}\n\n`
-    const desc = `${b.b3f}description${b.b3b}\n${handler.description || emptyPlaceholder}\n\n`
-    const version = `${b.b3f}version${b.b3b}\n${handler.meta?.version || notFound}\n\n`
-    const fileName = `${b.b3f}meta file name${b.b3b}\n${handler.meta?.fileName || notFound}\n\n`
-    const author = `${b.b3f}author${b.b3b}\n${handler.meta?.author || notFound}\n\n`
-    const note = `${b.b3f}author's note${b.b3b}\n${handler.meta?.note || notFound}\n\n`
-    const dir = `${b.b3f}lokasi file${b.b3b}\n${dirPovCwd(handler.dir)}`
-    return header + name + desc + category + command + needPrefix + author + note + fileName + version + dir
+    // default meta kalau tidak diisi
+    const meta = {
+        version: '1.0.0',
+        author: b.an,
+        fileName: notFound,
+        note: '-',
+        ...handler.meta
+    }
+
+    // garis pemisah dekoratif
+    const line = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+
+    return `
+╭─〔 ✨ PLUGIN INFORMATION ✨ 〕─╮
+${line}
+
+// 🆔 Name
+🆔 *Name*  
+➤ ${handler.pluginName || notFound}
+// ini adalah nama dari plugin, biasanya ditampilkan di menu atau log
+
+// 📝 Description
+📝 *Description*  
+➤ ${handler.description || emptyPlaceholder}
+// deskripsi singkat fungsional plugin
+
+// 📂 Category
+📂 *Category*  
+➤ ${handler.category?.join(', ') || emptyPlaceholder}
+// kategori plugin (misal: developer, fun, downloader)
+
+// ⌨️ Command
+⌨️ *Command*  
+➤ ${handler.command?.join(', ') || emptyPlaceholder}
+// perintah / trigger untuk menjalankan plugin
+
+// ⚙️ Bypass Prefix
+⚙️ *Bypass Prefix*  
+➤ ${handler?.config?.bypassPrefix ? 'Yes ✅' : 'No ❌'}
+// apakah plugin bisa dijalankan tanpa prefix
+
+// 👤 Author
+👤 *Author*  
+➤ ${meta.author}
+// nama author atau pembuat plugin
+
+// 💭 Author Note
+💭 *Author Note*  
+➤ ${meta.note}
+// catatan tambahan dari author
+
+// 📄 File Name
+📄 *File Name*  
+➤ ${meta.fileName}
+// nama file plugin, biasanya di folder plugin
+
+// 🧩 Version
+🧩 *Version*  
+➤ ${meta.version}
+// versi plugin, default 1.0.0 jika tidak diisi
+
+// 📍 File Path
+📍 *File Path*  
+➤ ${dirPovCwd(handler.dir)}
+// lokasi file plugin di sistem
+
+${line}
+╰─〔 🏁 END OF INFO 🏁 〕─╯
+`.trim()
 }

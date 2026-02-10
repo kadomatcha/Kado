@@ -19,54 +19,59 @@ function shouldIgnore(filePath) {
 async function handler({ sock, m, jid }) {
     if (!userManager.trustedJids.has(m.senderId)) return
 
-    const sent = await sock.sendMessage(jid, { text: 'checking update...' }, { quoted: m })
+    const sent = await sock.sendMessage(jid, { text: '🔄 checking update...' }, { quoted: m })
 
-    await new Promise(r => setTimeout(r, 1500))
+    await new Promise(r => setTimeout(r, 1000))
 
     try {
+        // mulai load plugin
+        await editText(sock, jid, sent, '📂 load plugins...')
+
+        // jalankan loadPlugins & buildMenu
         await pluginManager.loadPlugins()
         pluginManager.buildMenu()
 
+        
+        await editText(sock, jid, sent, '📂 load plugins selesai!')
+
+        // cek git
         const { stdout } = await run('git status --porcelain')
 
         if (!stdout.trim()) {
-            return await editText(sock, jid, sent, 'plugin reload selesai\nrepo: tidak ada perubahan')
+            return await editText(sock, jid, sent, '✅ plugin reload selesai\nrepo: tidak ada perubahan')
         }
 
         const changedLines = stdout
-    .trim()
-    .split('\n')
-    .map(line => {
-        const status = line.slice(0, 2).trim()
-        const filePath = line.replace(/^[ MADRCU?]{1,2}\s+/, '').trim()
-        return { status, filePath }
-    })
+            .trim()
+            .split('\n')
+            .map(line => {
+                const status = line.slice(0, 2).trim()
+                const filePath = line.replace(/^[ MADRCU?]{1,2}\s+/, '').trim()
+                return { status, filePath }
+            })
             .filter(f => !shouldIgnore(f.filePath))
 
         if (!changedLines.length) {
-            return await editText(sock, jid, sent, 'plugin reload selesai\nperubahan hanya pada file yang di-ignore')
+            return await editText(sock, jid, sent, '✅ plugin reload selesai\nperubahan hanya pada file yang di-ignore')
         }
 
-        const files = changedLines
-            .map(f => `• [${f.status}] ${f.filePath}`)
-            .join('\n')
+        const files = changedLines.map(f => `• [${f.status}] ${f.filePath}`).join('\n')
 
+        // push ke repo
+        await editText(sock, jid, sent, '⬆️ pushing changes to repo...')
         await run('git add .')
         await run(`git commit -m "auto update ${Date.now()}"`)
         await run('git push')
 
-        const msg =
-`plugin reload selesai
+        await editText(sock, jid, sent,
+`✅ plugin reload selesai
 
 perubahan terdeteksi:
 ${files}
 
-repo: berhasil di push`
-
-        await editText(sock, jid, sent, msg)
-
+repo: berhasil di push`)
     } catch (e) {
-        await editText(sock, jid, sent, 'error:\n' + e.message)
+        await editText(sock, jid, sent, '❌ error:\n' + e.message)
     }
 }
 

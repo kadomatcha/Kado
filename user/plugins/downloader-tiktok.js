@@ -1,29 +1,25 @@
-import axios from 'axios'
+import TiktokScraper from '../scrape/tiktok.js'
 import {
     textOnlyMessage,
     sendText,
     sendVideo,
+    sendFancyMp3,
     sendImage,
-    sendFancyMp3
+botInfo
 } from '#helper'
 
-/**
- * @param {import('../types/plugin.js').HandlerParams} params
- */
-async function handler({ sock, m, jid, q }) {
+const scraper = new TiktokScraper()
+
+async function handler({ sock, m, jid }) {
     if (!textOnlyMessage(m)) return
 
-    // ambil link dari reply ATAU dari text biasa
-    const url =
-        q?.message?.conversation ||
-        q?.message?.extendedTextMessage?.text ||
-        m.text?.split(' ').slice(1).join(' ')?.trim()
+    const url = m.text.split(' ').slice(1).join(' ').trim()
 
     if (!url) {
         return sendText(
             sock,
             jid,
-            'masukin link tiktok\ncontoh:\ntiktok https://vt.tiktok.com/xxxx',
+            'masukin link tiktok',
             m
         )
     }
@@ -33,26 +29,21 @@ async function handler({ sock, m, jid, q }) {
     }
 
     try {
-        const { data } = await axios.get(
-            `https://api.deline.web.id/downloader/tiktok?url=${encodeURIComponent(url)}`
-        )
+        const res = await scraper.download(url)
 
-        if (!data?.status || !data?.result) {
-            return sendText(sock, jid, 'gagal ambil data tiktok', m)
+        if (!res.status) {
+            return sendText(sock, jid, 'gagal ambil data\n' + res.message, m)
         }
 
-        const res = data.result
-        const caption = `${res.title || ''}\n\n@${res.author?.unique_id || '-'}`
+        const caption = `${res.title || ''}\n\n@${res.author || '-'}`
 
-        if (res.type === 'video' && res.download) {
-            await sendVideo(sock, jid, res.download, caption, m)
-        } else if (res.type === 'image' && res.download) {
-            if (Array.isArray(res.download)) {
-                for (const img of res.download) {
-                    await sendImage(sock, jid, img, caption, m)
-                }
-            } else {
-                await sendImage(sock, jid, res.download, caption, m)
+        if (res.video) {
+            await sendVideo(sock, jid, res.video, caption, m)
+        }
+
+        else if (res.images) {
+            for (const img of res.images) {
+                await sendImage(sock, jid, img, caption, m)
             }
         }
 
@@ -62,27 +53,24 @@ async function handler({ sock, m, jid, q }) {
                 jid,
                 res.music,
                 res.title || 'TikTok Audio',
-                `@${res.author?.unique_id || '-'}`,
-                res.author?.avatar || '',
+                `@${res.author || '-'}`,
+                res.thumbnail || '',
                 false,
                 m
             )
         }
 
     } catch (e) {
-        return sendText(sock, jid, `error: ${e.message}`, m)
+        return sendText(sock, jid, 'error: ' + e.message, m)
     }
 }
 
 handler.pluginName = 'tiktok downloader'
-handler.command = ['tt']
+handler.command = ['tiktok','tt']
 handler.category = ['downloader']
-
 handler.meta = {
-    fileName: 'downloader-tiktok.js',
-    version: '1.1.1',
-    author: 'Ky',
-    note: 'download video or image from tiktok'
+fileName: 'downloader-tiktok.js',
+version: '2',
+author: botInfo.an
 }
-
 export default handler
